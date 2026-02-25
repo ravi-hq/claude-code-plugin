@@ -124,6 +124,68 @@ ravi message email --unread --json     # Unread only
 ravi message email <message_id> --json # Specific message
 ```
 
+## Sending Emails
+
+### Compose a new email
+
+```bash
+ravi email compose --to "recipient@example.com" --subject "Subject" --body "<p>HTML content</p>" --json
+```
+
+**Flags:**
+- `--to` (required): Recipient email address
+- `--subject` (required): Email subject line
+- `--body` (required): Email body (HTML supported — use tags like `<p>`, `<h2>`, `<ul>` for formatting)
+- `--cc`: CC recipients (comma-separated)
+- `--bcc`: BCC recipients (comma-separated)
+- `--attach`: File path to attach (can be repeated for multiple files)
+
+**Example with HTML formatting and attachment:**
+```bash
+ravi email compose --to "user@example.com" --subject "Monthly Report" \
+  --body "<h2>Monthly Report</h2><p>Key findings:</p><ul><li>Revenue up 15%</li><li>Churn down 3%</li></ul>" \
+  --attach report.pdf --json
+```
+
+### Reply to an email
+
+```bash
+# Reply to sender only
+ravi email reply <message_id> --subject "Re: Original Subject" --body "<p>Reply content</p>" --json
+
+# Reply to all recipients
+ravi email reply-all <message_id> --subject "Re: Original Subject" --body "<p>Reply content</p>" --json
+```
+
+**Flags:** `--subject` (required), `--body` (required), `--attach` (optional)
+
+**Note:** The subject must be provided because the original is E2E encrypted on the server.
+
+### Attachments
+
+Attachments are uploaded automatically when you use `--attach`. The CLI:
+1. Validates the file (blocked extensions like `.exe` rejected instantly)
+2. Requests a presigned upload URL from the server
+3. Uploads the file directly to cloud storage
+4. Includes the attachment UUID in the email
+
+**Blocked extensions:** `.exe`, `.dll`, `.bat`, `.cmd`, `.msi`, `.iso`, `.dmg`, `.apk`, and other dangerous file types. Developer files (`.py`, `.sh`, `.js`, `.rb`) are allowed.
+
+**Max size:** 10 MB per attachment.
+
+### Rate Limits
+
+Email sending is rate-limited per user account:
+- **60 emails/hour** and **500 emails/day**
+- **200 attachment uploads/hour**
+
+On hitting a rate limit, you'll get a 429 error with a `retry_after_seconds` value. Wait that many seconds before retrying.
+
+**Best practices for agents:**
+- Avoid tight loops of email sends — batch work where possible
+- On 429: parse `retry_after_seconds` from the error, wait, then retry
+- For bulk operations, add a 1-2 second delay between sends
+
 ## Credential Vault
 
 Store and retrieve passwords for services you sign up for. All fields are E2E encrypted.
@@ -198,6 +260,19 @@ CODE=$(ravi inbox sms --unread --json | jq -r '.[0].preview' | grep -oE '[0-9]{4
 # Use $CODE to complete the login
 ```
 
+### Send a follow-up email after signup
+
+```bash
+# 1. Compose a welcome email
+ravi email compose --to "partner@example.com" --subject "Following up" \
+  --body "<p>Hi, I just signed up for your service using my Ravi identity.</p><p>Looking forward to getting started!</p>" --json
+
+# 2. Reply to an existing thread
+MSG_ID=$(ravi message email --json | jq -r '.[0].id')
+ravi email reply "$MSG_ID" --subject "Re: Welcome to Service" \
+  --body "<p>Thanks for the welcome! I have a question about setup.</p>" --json
+```
+
 ## Important Notes
 
 - **Always use `--json`** — all commands support it. Human-readable output is not designed for parsing.
@@ -205,3 +280,5 @@ CODE=$(ravi inbox sms --unread --json | jq -r '.[0].preview' | grep -oE '[0-9]{4
 - **Auth is automatic** — token refresh happens transparently. If you get auth errors, ask the user to re-login.
 - **E2E encryption is transparent** — the CLI encrypts vault fields before sending and decrypts on retrieval. You see plaintext.
 - **Domain cleaning** — `ravi vault create` auto-cleans URLs to base domains (e.g., `https://mail.google.com/inbox` becomes `google.com`).
+- **HTML email bodies** — The `--body` flag accepts HTML. Use tags for formatting: `<p>`, `<h2>`, `<ul>`, `<a href="...">`. No `<html>` or `<body>` wrapper needed.
+- **Rate limits** — 60 emails/hour, 500/day, 200 attachment uploads/hour. On 429 errors, wait `retry_after_seconds` then retry.
