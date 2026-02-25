@@ -8,17 +8,9 @@ Install the [Ravi CLI](https://github.com/ravi-hq/cli) first — this plugin tea
 
 ## Install
 
-**Option A** — Claude Code plugin:
-
 ```bash
 claude plugin marketplace add ravi-hq/claude-code-plugin
 claude plugin install ravi@ravi
-```
-
-**Option B** — CLI command (if `ravi` is already installed):
-
-```bash
-ravi init
 ```
 
 ## What it does
