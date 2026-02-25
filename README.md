@@ -1,18 +1,23 @@
 # Ravi — Claude Code Plugin
 
-Claude Code skill for the [Ravi CLI](https://github.com/ravi-hq/cli).
+Claude Code skill for the [Ravi CLI](https://github.com/ravi-hq/cli). Teaches Claude Code how to use `ravi` to manage agent identities, receive SMS/email, and store credentials.
+
+## Prerequisites
+
+Install the [Ravi CLI](https://github.com/ravi-hq/cli) first — this plugin teaches Claude Code how to use it, but doesn't include the CLI itself.
 
 ## Install
 
 **Option A** — Claude Code plugin:
 
-```
-claude plugin install ravi@https://github.com/ravi-hq/claude-code-plugin
+```bash
+claude plugin marketplace add ravi-hq/claude-code-plugin
+claude plugin install ravi@ravi
 ```
 
-**Option B** — CLI command (if `ravi` is installed):
+**Option B** — CLI command (if `ravi` is already installed):
 
-```
+```bash
 ravi init
 ```
 
